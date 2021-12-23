@@ -1,6 +1,9 @@
 import praw
 import os
+import time
 
+# init reddit bot instance
+# environment secrets are made available to the bot instance when running on Heroku
 r = praw.Reddit(
     username = "EnPassantHolyHellBot",
     password = os.environ['password'],
@@ -9,11 +12,17 @@ r = praw.Reddit(
     user_agent = "EnPassantHolyHellBot by github.com/cutwell"
     )
 
-subr = r.subreddit('anarchychess')  # this chooses a subreddit you want to get comments from
+subr = r.subreddit('anarchychess')
 
-for comment in subr.stream.comments(skip_existing=True):    # this iterates through the comments from that subreddit as new ones are coming in
+# stream new comments to sub posts
+for comment in subr.stream.comments(skip_existing=True):
     try:
-        if "google it" in comment.body:     # "!bot" is the keyword in this case. replace "bot" with your keyword
-            comment.reply("holy hell")      # this is what your bot replies to the comment that has the keyword
-    except praw.exceptions.APIException:    # Reddit may have rate limits, this prevents your bot from dying due to rate limits
-        print("probably a rate limit...")
+        # detect joke setup (string "google it" in a comment body)
+        if "google it" in comment.body:
+            # comment punchline
+            comment.reply("holy hell")
+    except praw.exceptions.APIException:
+        # gracefully pause when hitting wait limit
+        print("Probably a rate limit, waiting 60 seconds..")
+        time.sleep(60)
+        print("..Resuming")
